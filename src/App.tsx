@@ -25,10 +25,13 @@ function App() {
 
   const loadEvents = async () => {
     setIsLoading(true);
+    console.log('App: Starting to load events...');
     
     // Try to load geocoded events from cache first
     const cachedGeocoded = getCachedGeocodedEvents();
+    console.log('App: Cached geocoded events:', cachedGeocoded?.length || 0);
     if (cachedGeocoded && cachedGeocoded.length > 0) {
+      console.log('App: Using cached geocoded events');
       setGeocodedEvents(cachedGeocoded);
       setAllEvents(cachedGeocoded);
       extractCategories(cachedGeocoded);
@@ -50,8 +53,11 @@ function App() {
 
     // Fetch from API
     try {
+      console.log('App: Fetching events from API...');
       const events = await fetchHistoricalTimeline();
+      console.log('App: Fetched events:', events.length);
       const geocoded = geocodeEvents(events);
+      console.log('App: Geocoded events:', geocoded.length);
       setGeocodedEvents(geocoded);
       setAllEvents(events);
       extractCategories(events);
@@ -59,8 +65,22 @@ function App() {
       // Cache for next time
       cacheEvents(events);
       cacheGeocodedEvents(geocoded);
+      console.log('App: Events loaded and cached successfully');
     } catch (error) {
       console.error('Error loading events:', error);
+      console.error('Error details:', error);
+      // Set some fallback data to prevent white screen
+      const fallbackEvents: HistoricalEvent[] = [{
+        year: 1969,
+        title: 'Apollo 11 Moon Landing',
+        description: 'Neil Armstrong becomes the first person to walk on the Moon.',
+        category: 'Science',
+        url: 'https://en.wikipedia.org/wiki/Apollo_11'
+      }];
+      const fallbackGeocoded = geocodeEvents(fallbackEvents);
+      setGeocodedEvents(fallbackGeocoded);
+      setAllEvents(fallbackEvents);
+      extractCategories(fallbackEvents);
     } finally {
       setIsLoading(false);
     }
@@ -159,6 +179,12 @@ function App() {
               <div className="text-6xl mb-4">🗺️</div>
               <h2 className="text-2xl font-bold text-white mb-2">No events found</h2>
               <p className="text-gray-400">Try adjusting your filters or search term</p>
+              <button 
+                onClick={handleRefresh}
+                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Refresh Data
+              </button>
             </div>
           </div>
         )}
