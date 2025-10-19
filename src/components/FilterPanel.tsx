@@ -22,9 +22,9 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   isLoading,
 }) => {
   return (
-    <div className="fixed top-16 left-4 right-4 z-40 flex flex-col md:flex-row gap-2">
+    <div className="flex flex-col gap-3">
       {/* Search Bar */}
-      <div className="glass-effect rounded-lg p-2 flex-1 border border-blue-500/20">
+      <div className="bg-gray-800/50 rounded-lg p-2 border border-gray-700/30">
         <input
           type="text"
           placeholder="Search events..."
@@ -34,41 +34,42 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         />
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex gap-2">
-        <button
-          onClick={onRandomYear}
-          disabled={isLoading}
-          className="glass-effect rounded-lg px-3 py-2 text-xs font-medium text-white hover:bg-blue-500/20 transition-colors border border-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-        >
-          🎲 Random
-        </button>
-        <button
-          onClick={onRefresh}
-          disabled={isLoading}
-          className="glass-effect rounded-lg px-3 py-2 text-xs font-medium text-white hover:bg-blue-500/20 transition-colors border border-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isLoading ? '⟳' : '↻'}
-        </button>
-      </div>
-
       {/* Category Filters */}
-      <div className="glass-effect rounded-lg p-2 border border-blue-500/20">
-        <div className="flex flex-wrap gap-1">
+      <div>
+        <h3 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Categories</h3>
+        <div className="flex flex-wrap gap-2">
           {categories.map((category) => (
             <button
               key={category}
               onClick={() => onToggleCategory(category)}
-              className={`px-2 py-1 rounded-full text-xs font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 selectedCategories.has(category)
                   ? `${getCategoryBg(category)} ${getCategoryText(category)} ring-1 ring-current`
-                  : 'bg-gray-700/50 text-gray-400 hover:bg-gray-600/50'
+                  : 'bg-gray-800/50 text-gray-500 hover:bg-gray-700/50 hover:text-gray-400'
               }`}
             >
               {category}
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex gap-2 pt-2 border-t border-gray-700/30">
+        <button
+          onClick={onRandomYear}
+          disabled={isLoading}
+          className="flex-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg px-3 py-2 text-xs font-medium transition-colors border border-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          🎲 Random
+        </button>
+        <button
+          onClick={onRefresh}
+          disabled={isLoading}
+          className="bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 rounded-lg px-3 py-2 text-xs font-medium transition-colors border border-gray-600/30 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoading ? '⟳' : '↻'}
+        </button>
       </div>
     </div>
   );

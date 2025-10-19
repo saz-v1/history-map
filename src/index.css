@@ -1,4 +1,10 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+/* Fix Leaflet marker icons */
+.leaflet-default-icon-path {
+  background-image: url('leaflet/dist/images/marker-icon.png');
+}
 
 * {
   box-sizing: border-box;
@@ -48,4 +54,9 @@ body {
   cursor: pointer;
   border: 2px solid white;
   box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+/* Leaflet map fixes */
+.leaflet-container {
+  background: #0a0e27 !important;
 }

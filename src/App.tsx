@@ -1,38 +1,49 @@
 import { useState, useEffect } from 'react';
-import Timeline from './components/Timeline';
+import HistoryMap from './components/HistoryMap';
 import FilterPanel from './components/FilterPanel';
 import Loading from './components/Loading';
 import type { HistoricalEvent } from './services/historyApi';
 import { fetchHistoricalTimeline, getRandomYear, fetchEventsForYear } from './services/historyApi';
 import { cacheEvents, getCachedEvents } from './services/cacheService';
+import { geocodeEvents, getCachedGeocodedEvents, cacheGeocodedEvents, type GeocodedEvent } from './services/geocodingService';
 
 function App() {
   const [allEvents, setAllEvents] = useState<HistoricalEvent[]>([]);
-  const [filteredEvents, setFilteredEvents] = useState<HistoricalEvent[]>([]);
+  const [geocodedEvents, setGeocodedEvents] = useState<GeocodedEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+  const [yearRange] = useState<[number, number]>([1000, 2024]);
 
   // Load events on mount
   useEffect(() => {
     loadEvents();
   }, []);
 
-  // Filter events when search or categories change
-  useEffect(() => {
-    filterEvents();
-  }, [searchTerm, selectedCategories, allEvents]);
+  // Note: Filtering is now handled directly in the HistoryMap component
 
   const loadEvents = async () => {
     setIsLoading(true);
     
-    // Try to load from cache first
+    // Try to load geocoded events from cache first
+    const cachedGeocoded = getCachedGeocodedEvents();
+    if (cachedGeocoded && cachedGeocoded.length > 0) {
+      setGeocodedEvents(cachedGeocoded);
+      setAllEvents(cachedGeocoded);
+      extractCategories(cachedGeocoded);
+      setIsLoading(false);
+      return;
+    }
+    
+    // Try to load regular events from cache
     const cached = getCachedEvents();
     if (cached && cached.length > 0) {
-      console.log('Loaded from cache:', cached.length, 'events');
+      const geocoded = geocodeEvents(cached);
+      setGeocodedEvents(geocoded);
       setAllEvents(cached);
       extractCategories(cached);
+      cacheGeocodedEvents(geocoded);
       setIsLoading(false);
       return;
     }
@@ -40,12 +51,14 @@ function App() {
     // Fetch from API
     try {
       const events = await fetchHistoricalTimeline();
-      console.log('Fetched from API:', events.length, 'events');
+      const geocoded = geocodeEvents(events);
+      setGeocodedEvents(geocoded);
       setAllEvents(events);
       extractCategories(events);
       
       // Cache for next time
       cacheEvents(events);
+      cacheGeocodedEvents(geocoded);
     } catch (error) {
       console.error('Error loading events:', error);
     } finally {
@@ -59,26 +72,6 @@ function App() {
     setSelectedCategories(new Set(categories));
   };
 
-  const filterEvents = () => {
-    let filtered = allEvents;
-
-    // Filter by category
-    if (selectedCategories.size > 0) {
-      filtered = filtered.filter(event => selectedCategories.has(event.category));
-    }
-
-    // Filter by search term
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(event =>
-        event.title.toLowerCase().includes(term) ||
-        event.description.toLowerCase().includes(term) ||
-        event.year.toString().includes(term)
-      );
-    }
-
-    setFilteredEvents(filtered);
-  };
 
   const handleToggleCategory = (category: string) => {
     const newSelected = new Set(selectedCategories);
@@ -126,38 +119,44 @@ function App() {
 
   return (
     <div className="w-screen h-screen overflow-hidden bg-gray-900 relative">
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-50 p-4">
-        <div className="text-center mb-2">
-          <h1 className="text-3xl font-bold text-white mb-1 tracking-tight">
-            Time<span className="text-blue-400">Scape</span>
-          </h1>
-          <p className="text-gray-400 text-xs">
-            Explore {allEvents.length.toLocaleString()} events across history
-            {filteredEvents.length !== allEvents.length && ` (${filteredEvents.length.toLocaleString()} shown)`}
-          </p>
-        </div>
+      {/* Floating Filter Panel - Left Side */}
+      <div className="absolute top-4 left-4 z-[1000] max-w-xs">
+        <div className="bg-gray-900/95 backdrop-blur-md rounded-xl p-4 border border-gray-700/50 shadow-2xl">
+          <div className="mb-4">
+            <h1 className="text-2xl font-bold text-white mb-1 tracking-tight">
+              Time<span className="text-blue-400">Scape</span>
+            </h1>
+            <p className="text-gray-400 text-xs">
+              {allEvents.length.toLocaleString()} events
+            </p>
+          </div>
 
-        <FilterPanel
-          categories={availableCategories}
-          selectedCategories={selectedCategories}
-          onToggleCategory={handleToggleCategory}
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          onRandomYear={handleRandomYear}
-          onRefresh={handleRefresh}
-          isLoading={isLoading}
-        />
+          <FilterPanel
+            categories={availableCategories}
+            selectedCategories={selectedCategories}
+            onToggleCategory={handleToggleCategory}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            onRandomYear={handleRandomYear}
+            onRefresh={handleRefresh}
+            isLoading={isLoading}
+          />
+        </div>
       </div>
 
-      {/* Timeline */}
-      <div className="w-full h-full pt-32">
-        {filteredEvents.length > 0 ? (
-          <Timeline events={filteredEvents} />
+      {/* Map - Full Screen */}
+      <div className="w-full h-full">
+        {geocodedEvents.length > 0 ? (
+          <HistoryMap 
+            events={geocodedEvents}
+            selectedCategories={selectedCategories}
+            yearRange={yearRange}
+            searchTerm={searchTerm}
+          />
         ) : (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              <div className="text-6xl mb-4">🔍</div>
+              <div className="text-6xl mb-4">🗺️</div>
               <h2 className="text-2xl font-bold text-white mb-2">No events found</h2>
               <p className="text-gray-400">Try adjusting your filters or search term</p>
             </div>
@@ -175,18 +174,9 @@ function App() {
         </div>
       )}
 
-      {/* Instructions */}
-      <div className="fixed bottom-4 left-4 bg-gray-800/80 rounded-lg p-3 text-xs text-gray-400 max-w-xs">
-        <p className="mb-1"><strong className="text-white">💡 Tips:</strong></p>
-        <p>• Scroll to zoom in/out</p>
-        <p>• Drag to pan the timeline</p>
-        <p>• Hover over events for details</p>
-        <p>• Click events to read more</p>
-      </div>
-
       {/* Footer */}
-      <div className="fixed bottom-4 right-4 text-xs text-gray-500">
-        Data from <a href="https://byabbe.se/on-this-day/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">byabbe.se</a> & Wikipedia
+      <div className="fixed bottom-4 right-4 text-xs text-gray-400 bg-gray-900/80 backdrop-blur-sm rounded-lg px-3 py-2 z-[1000]">
+        Data from <a href="https://byabbe.se/on-this-day/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors">byabbe.se</a> & Wikipedia
       </div>
     </div>
   );
