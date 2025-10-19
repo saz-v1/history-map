@@ -198,3 +198,39 @@ export function getRandomYear(min: number = 1000, max: number = 2024): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+/**
+ * Fetch events for a specific geographic region and time period
+ */
+export async function fetchEventsForRegion(
+  _bounds: { north: number; south: number; east: number; west: number },
+  yearRange: [number, number] = [1000, 2024]
+): Promise<HistoricalEvent[]> {
+  const allEvents: HistoricalEvent[] = [];
+  
+  // Sample fewer dates for regional loading to keep it fast
+  const monthDayPairs: [number, number][] = [];
+  
+  // Sample 2 days per month for regional loading
+  for (let month = 1; month <= 12; month++) {
+    monthDayPairs.push([month, 1]);
+    monthDayPairs.push([month, 15]);
+  }
+  
+  // Fetch events for each date
+  const promises = monthDayPairs.map(([month, day]) => fetchEventsByDate(month, day));
+  
+  try {
+    const results = await Promise.all(promises);
+    results.forEach(events => {
+      allEvents.push(...events);
+    });
+  } catch (error) {
+    console.error('Error fetching regional events:', error);
+  }
+  
+  // Filter by year range
+  return allEvents.filter(event => 
+    event.year >= yearRange[0] && event.year <= yearRange[1]
+  );
+}
+

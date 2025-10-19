@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
 import MarkerClusterGroup from './MarkerClusterGroup';
 import type { GeocodedEvent } from '../services/geocodingService';
+import { dynamicLoadingService, type MapBounds } from '../services/dynamicLoadingService';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -17,11 +18,21 @@ interface HistoryMapProps {
   selectedCategories: Set<string>;
   yearRange: [number, number];
   searchTerm?: string;
+  onEventsLoaded?: (newEvents: GeocodedEvent[]) => void;
 }
 
-// Component to handle map updates
-function MapUpdater({ events }: { events: GeocodedEvent[] }) {
+// Component to handle map updates and dynamic loading
+function MapUpdater({ 
+  events, 
+  yearRange, 
+  onEventsLoaded 
+}: { 
+  events: GeocodedEvent[];
+  yearRange: [number, number];
+  onEventsLoaded?: (newEvents: GeocodedEvent[]) => void;
+}) {
   const map = useMap();
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   
   useEffect(() => {
     if (events.length > 0) {
@@ -36,11 +47,66 @@ function MapUpdater({ events }: { events: GeocodedEvent[] }) {
       }
     }
   }, [events, map]);
+
+  // Handle map movement for dynamic loading
+  const handleMapMove = useCallback(() => {
+    const bounds = map.getBounds();
+    const zoom = map.getZoom();
+    
+    const mapBounds: MapBounds = {
+      north: bounds.getNorth(),
+      south: bounds.getSouth(),
+      east: bounds.getEast(),
+      west: bounds.getWest(),
+    };
+
+    // Check if we should load more events
+    if (dynamicLoadingService.shouldLoadEvents(mapBounds, zoom)) {
+      dynamicLoadingService.loadEventsForRegion(
+        mapBounds,
+        yearRange,
+        (newEvents) => {
+          if (onEventsLoaded && newEvents.length > 0) {
+            onEventsLoaded(newEvents);
+          }
+        },
+        setIsLoadingMore
+      );
+    }
+  }, [map, yearRange, onEventsLoaded]);
+
+  useEffect(() => {
+    // Add event listeners for map movement
+    map.on('moveend', handleMapMove);
+    map.on('zoomend', handleMapMove);
+
+    return () => {
+      map.off('moveend', handleMapMove);
+      map.off('zoomend', handleMapMove);
+    };
+  }, [map, handleMapMove]);
   
-  return null;
+  return (
+    <>
+      {isLoadingMore && (
+        <div className="absolute top-4 right-4 z-[1000] bg-gray-900/90 backdrop-blur-sm rounded-lg px-3 py-2 text-white text-sm">
+          <div className="flex items-center gap-2">
+            <div className="animate-spin w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+            Loading more events...
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
 
-const HistoryMap: React.FC<HistoryMapProps> = ({ events, selectedCategories, yearRange, searchTerm = '' }) => {
+const HistoryMap: React.FC<HistoryMapProps> = ({ 
+  events, 
+  selectedCategories, 
+  yearRange, 
+  searchTerm = '', 
+  onEventsLoaded 
+}) => {
   const [mapReady, setMapReady] = useState(false);
 
   // Filter events by category, year range, and search term
@@ -96,7 +162,7 @@ const HistoryMap: React.FC<HistoryMapProps> = ({ events, selectedCategories, yea
       <MapContainer
         center={[20, 0]}
         zoom={2}
-        minZoom={1}
+        minZoom={2}
         maxZoom={6}
         style={{ height: '100%', width: '100%' }}
         className="z-0"
@@ -111,6 +177,8 @@ const HistoryMap: React.FC<HistoryMapProps> = ({ events, selectedCategories, yea
         attributionControl={true}
         zoomSnap={0.5}
         zoomDelta={0.5}
+        maxBounds={[[-85, -180], [85, 180]]}
+        maxBoundsViscosity={1.0}
       >
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
@@ -118,7 +186,7 @@ const HistoryMap: React.FC<HistoryMapProps> = ({ events, selectedCategories, yea
           maxZoom={19}
         />
         
-        {mapReady && <MapUpdater events={filteredEvents} />}
+        {mapReady && <MapUpdater events={filteredEvents} yearRange={yearRange} onEventsLoaded={onEventsLoaded} />}
         
         <MarkerClusterGroup
           chunkedLoading

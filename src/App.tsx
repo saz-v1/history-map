@@ -6,6 +6,7 @@ import type { HistoricalEvent } from './services/historyApi';
 import { fetchHistoricalTimeline, getRandomYear, fetchEventsForYear } from './services/historyApi';
 import { cacheEvents, getCachedEvents } from './services/cacheService';
 import { geocodeEvents, getCachedGeocodedEvents, cacheGeocodedEvents, type GeocodedEvent } from './services/geocodingService';
+import { dynamicLoadingService } from './services/dynamicLoadingService';
 
 function App() {
   const [allEvents, setAllEvents] = useState<HistoricalEvent[]>([]);
@@ -130,7 +131,30 @@ function App() {
   };
 
   const handleRefresh = () => {
+    // Reset dynamic loading service
+    dynamicLoadingService.reset();
     loadEvents();
+  };
+
+  const handleEventsLoaded = (newEvents: GeocodedEvent[]) => {
+    // Add new events to existing ones, avoiding duplicates
+    setAllEvents(prevEvents => {
+      const combined = [...prevEvents, ...newEvents];
+      // Remove duplicates based on year + title
+      const uniqueEvents = combined.filter((event, index, self) =>
+        index === self.findIndex(e => e.year === event.year && e.title === event.title)
+      );
+      return uniqueEvents;
+    });
+    
+    setGeocodedEvents(prevGeocoded => {
+      const combined = [...prevGeocoded, ...newEvents];
+      // Remove duplicates based on year + title
+      const uniqueEvents = combined.filter((event, index, self) =>
+        index === self.findIndex(e => e.year === event.year && e.title === event.title)
+      );
+      return uniqueEvents;
+    });
   };
 
   if (isLoading && allEvents.length === 0) {
@@ -172,6 +196,7 @@ function App() {
             selectedCategories={selectedCategories}
             yearRange={yearRange}
             searchTerm={searchTerm}
+            onEventsLoaded={handleEventsLoaded}
           />
         ) : (
           <div className="flex items-center justify-center h-full">
