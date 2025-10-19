@@ -139,11 +139,11 @@ function App() {
 
   return (
     <div className="w-screen h-screen overflow-hidden bg-gray-900 relative">
-      {/* Floating Filter Panel - Left Side */}
-      <div className="absolute top-4 left-4 z-[1000] max-w-xs">
-        <div className="bg-gray-900/95 backdrop-blur-md rounded-xl p-4 border border-gray-700/50 shadow-2xl">
+      {/* Floating Filter Panel - Responsive */}
+      <div className="absolute top-2 left-2 right-2 sm:top-4 sm:left-4 sm:right-auto z-[1000] max-w-xs sm:max-w-sm">
+        <div className="bg-gray-900/95 backdrop-blur-md rounded-xl p-3 sm:p-4 border border-gray-700/50 shadow-2xl">
           <div className="mb-4">
-            <h1 className="text-2xl font-bold text-white mb-1 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-bold text-white mb-1 tracking-tight">
               Time<span className="text-blue-400">Scape</span>
             </h1>
             <p className="text-gray-400 text-xs">
@@ -201,7 +201,7 @@ function App() {
       )}
 
       {/* Footer */}
-      <div className="fixed bottom-4 right-4 text-xs text-gray-400 bg-gray-900/80 backdrop-blur-sm rounded-lg px-3 py-2 z-[1000]">
+      <div className="fixed bottom-2 right-2 sm:bottom-4 sm:right-4 text-xs text-gray-400 bg-gray-900/80 backdrop-blur-sm rounded-lg px-2 py-1 sm:px-3 sm:py-2 z-[1000]">
         Data from <a href="https://byabbe.se/on-this-day/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors">byabbe.se</a> & Wikipedia
       </div>
     </div>

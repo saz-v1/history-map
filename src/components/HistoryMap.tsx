@@ -2,7 +2,15 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
 import MarkerClusterGroup from './MarkerClusterGroup';
 import type { GeocodedEvent } from '../services/geocodingService';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+
+// Configure Leaflet to use CDN for default icons
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+});
 
 interface HistoryMapProps {
   events: GeocodedEvent[];
@@ -22,7 +30,7 @@ function MapUpdater({ events }: { events: GeocodedEvent[] }) {
       if (bounds.length > 0) {
         map.fitBounds(bounds, { 
           padding: [50, 50], 
-          maxZoom: 4,
+          maxZoom: 5,
           animate: true
         });
       }
@@ -88,9 +96,21 @@ const HistoryMap: React.FC<HistoryMapProps> = ({ events, selectedCategories, yea
       <MapContainer
         center={[20, 0]}
         zoom={2}
+        minZoom={1}
+        maxZoom={6}
         style={{ height: '100%', width: '100%' }}
         className="z-0"
         whenReady={() => setMapReady(true)}
+        zoomControl={true}
+        scrollWheelZoom={true}
+        doubleClickZoom={true}
+        dragging={true}
+        touchZoom={true}
+        boxZoom={true}
+        keyboard={true}
+        attributionControl={true}
+        zoomSnap={0.5}
+        zoomDelta={0.5}
       >
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"

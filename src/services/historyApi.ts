@@ -153,12 +153,16 @@ export async function fetchHistoricalTimeline(): Promise<HistoricalEvent[]> {
   // Fetch events from various dates throughout the year for diversity
   const monthDayPairs: [number, number][] = [];
   
-  // Sample 3 days per month to get more diverse events
+  // Sample 5 days per month to get much more diverse events
   for (let month = 1; month <= 12; month++) {
     monthDayPairs.push([month, 1]);
+    monthDayPairs.push([month, 7]);
     monthDayPairs.push([month, 15]);
+    monthDayPairs.push([month, 22]);
     if (month !== 2) {
       monthDayPairs.push([month, 28]);
+    } else {
+      monthDayPairs.push([month, 25]); // February 25th instead of 28th
     }
   }
   
