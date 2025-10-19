@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import type { GeocodedEvent } from '../services/geocodingService';
 import 'leaflet/dist/leaflet.css';
@@ -8,14 +8,7 @@ interface SimpleMapProps {
 }
 
 const SimpleMap: React.FC<SimpleMapProps> = ({ events }) => {
-  const [mapReady, setMapReady] = useState(false);
-
   console.log('SimpleMap render - events:', events.length);
-
-  useEffect(() => {
-    console.log('SimpleMap mounted');
-    setMapReady(true);
-  }, []);
 
   if (events.length === 0) {
     return (

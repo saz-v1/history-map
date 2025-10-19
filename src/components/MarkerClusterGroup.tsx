@@ -16,7 +16,7 @@ const MarkerClusterGroup = createPathComponent<L.MarkerClusterGroup, MarkerClust
     // Splitting props and events to different objects
     Object.entries(props).forEach(([propName, prop]) => {
       if (propName.startsWith('on')) {
-        clusterEvents[propName] = prop as L.LeafletEventHandlerFn;
+        clusterEvents[propName as keyof L.LeafletEventHandlerFnMap] = prop as L.LeafletEventHandlerFn;
       } else {
         clusterProps[propName as keyof L.MarkerClusterGroupOptions] = prop as any;
       }
