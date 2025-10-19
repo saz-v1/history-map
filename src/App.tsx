@@ -127,12 +127,12 @@ function App() {
   return (
     <div className="w-screen h-screen overflow-hidden bg-gray-900 relative">
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-50 p-6">
-        <div className="text-center mb-4">
-          <h1 className="text-5xl font-bold text-white mb-2 tracking-tight">
+      <div className="absolute top-0 left-0 right-0 z-50 p-4">
+        <div className="text-center mb-2">
+          <h1 className="text-3xl font-bold text-white mb-1 tracking-tight">
             Time<span className="text-blue-400">Scape</span>
           </h1>
-          <p className="text-gray-400 text-sm">
+          <p className="text-gray-400 text-xs">
             Explore {allEvents.length.toLocaleString()} events across history
             {filteredEvents.length !== allEvents.length && ` (${filteredEvents.length.toLocaleString()} shown)`}
           </p>
@@ -151,7 +151,7 @@ function App() {
       </div>
 
       {/* Timeline */}
-      <div className="w-full h-full pt-56">
+      <div className="w-full h-full pt-32">
         {filteredEvents.length > 0 ? (
           <Timeline events={filteredEvents} />
         ) : (

@@ -22,12 +22,12 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   isLoading,
 }) => {
   return (
-    <div className="fixed top-4 left-4 right-4 z-40 flex flex-col md:flex-row gap-4">
+    <div className="fixed top-16 left-4 right-4 z-40 flex flex-col md:flex-row gap-2">
       {/* Search Bar */}
-      <div className="glass-effect rounded-lg p-3 flex-1 border border-blue-500/20">
+      <div className="glass-effect rounded-lg p-2 flex-1 border border-blue-500/20">
         <input
           type="text"
-          placeholder="Search events by title, year, or description..."
+          placeholder="Search events..."
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
           className="w-full bg-transparent text-white placeholder-gray-400 outline-none text-sm"
@@ -39,29 +39,29 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         <button
           onClick={onRandomYear}
           disabled={isLoading}
-          className="glass-effect rounded-lg px-4 py-3 text-sm font-medium text-white hover:bg-blue-500/20 transition-colors border border-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+          className="glass-effect rounded-lg px-3 py-2 text-xs font-medium text-white hover:bg-blue-500/20 transition-colors border border-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
         >
-          🎲 Random Year
+          🎲 Random
         </button>
         <button
           onClick={onRefresh}
           disabled={isLoading}
-          className="glass-effect rounded-lg px-4 py-3 text-sm font-medium text-white hover:bg-blue-500/20 transition-colors border border-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="glass-effect rounded-lg px-3 py-2 text-xs font-medium text-white hover:bg-blue-500/20 transition-colors border border-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? '⟳' : '↻'}
         </button>
       </div>
 
       {/* Category Filters */}
-      <div className="glass-effect rounded-lg p-3 border border-blue-500/20">
-        <div className="flex flex-wrap gap-2">
+      <div className="glass-effect rounded-lg p-2 border border-blue-500/20">
+        <div className="flex flex-wrap gap-1">
           {categories.map((category) => (
             <button
               key={category}
               onClick={() => onToggleCategory(category)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+              className={`px-2 py-1 rounded-full text-xs font-medium transition-all ${
                 selectedCategories.has(category)
-                  ? `${getCategoryBg(category)} ${getCategoryText(category)} ring-2 ring-current`
+                  ? `${getCategoryBg(category)} ${getCategoryText(category)} ring-1 ring-current`
                   : 'bg-gray-700/50 text-gray-400 hover:bg-gray-600/50'
               }`}
             >
