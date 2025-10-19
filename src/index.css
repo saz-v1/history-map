@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #0a0e27;
+  color: #f3f4f6;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+.glass-effect {
+  backdrop-filter: blur(10px);
+  background: rgba(30, 41, 59, 0.8);
+}
+
+.event-node-glow {
+  filter: drop-shadow(0 0 8px currentColor);
+  transition: all 0.3s ease;
+}
+
+.event-node-glow:hover {
+  filter: drop-shadow(0 0 16px currentColor);
+  transform: scale(1.2);
+}
