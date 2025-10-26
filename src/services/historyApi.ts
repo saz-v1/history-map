@@ -113,6 +113,31 @@ export async function fetchWikipediaEvents(month: number, day: number): Promise<
 }
 
 /**
+ * Fetch events from multiple sources (primary + fallback)
+ */
+async function fetchFromMultipleSources(month: number, day: number): Promise<HistoricalEvent[]> {
+  const events: HistoricalEvent[] = [];
+  
+  try {
+    // Try byabbe.se first (primary source)
+    const byabbeEvents = await fetchEventsByDate(month, day);
+    events.push(...byabbeEvents);
+  } catch (error) {
+    console.error(`Error fetching from byabbe.se for ${month}/${day}:`, error);
+  }
+  
+  try {
+    // Try Wikipedia as fallback
+    const wikipediaEvents = await fetchWikipediaEvents(month, day);
+    events.push(...wikipediaEvents);
+  } catch (error) {
+    console.error(`Error fetching from Wikipedia for ${month}/${day}:`, error);
+  }
+  
+  return events;
+}
+
+/**
  * Fetch events for a full year by sampling different dates
  */
 export async function fetchEventsForYear(year?: number): Promise<HistoricalEvent[]> {
@@ -124,8 +149,10 @@ export async function fetchEventsForYear(year?: number): Promise<HistoricalEvent
     [7, 4], [8, 15], [9, 11], [10, 31], [11, 11], [12, 25]
   ];
   
-  // Fetch events for each date
-  const promises = datesToFetch.map(([month, day]) => fetchEventsByDate(month, day));
+  // Fetch events for each date from multiple sources
+  const promises = datesToFetch.map(([month, day]) => 
+    fetchFromMultipleSources(month, day)
+  );
   
   try {
     const results = await Promise.all(promises);
@@ -153,24 +180,26 @@ export async function fetchHistoricalTimeline(): Promise<HistoricalEvent[]> {
   // Fetch events from various dates throughout the year for diversity
   const monthDayPairs: [number, number][] = [];
   
-  // Sample 5 days per month to get much more diverse events
+  // Sample 8 days per month to get much more diverse events from multiple sources
   for (let month = 1; month <= 12; month++) {
     monthDayPairs.push([month, 1]);
-    monthDayPairs.push([month, 7]);
+    monthDayPairs.push([month, 5]);
+    monthDayPairs.push([month, 10]);
     monthDayPairs.push([month, 15]);
-    monthDayPairs.push([month, 22]);
+    monthDayPairs.push([month, 20]);
+    monthDayPairs.push([month, 25]);
     if (month !== 2) {
       monthDayPairs.push([month, 28]);
-    } else {
-      monthDayPairs.push([month, 25]); // February 25th instead of 28th
     }
+    // Add one more date per month for extra coverage
+    monthDayPairs.push([month, Math.min(15 + month, 28)]);
   }
   
-  // Fetch in batches to avoid overwhelming the API
+  // Fetch in batches from multiple sources to avoid overwhelming the API
   const batchSize = 6;
   for (let i = 0; i < monthDayPairs.length; i += batchSize) {
     const batch = monthDayPairs.slice(i, i + batchSize);
-    const promises = batch.map(([month, day]) => fetchEventsByDate(month, day));
+    const promises = batch.map(([month, day]) => fetchFromMultipleSources(month, day));
     
     try {
       const results = await Promise.all(promises);
@@ -178,9 +207,9 @@ export async function fetchHistoricalTimeline(): Promise<HistoricalEvent[]> {
         allEvents.push(...events);
       });
       
-      // Small delay between batches to be respectful to the API
+      // Smaller delay for faster loading from multiple sources
       if (i + batchSize < monthDayPairs.length) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 50));
       }
     } catch (error) {
       console.error('Error in batch fetch:', error);
@@ -207,17 +236,19 @@ export async function fetchEventsForRegion(
 ): Promise<HistoricalEvent[]> {
   const allEvents: HistoricalEvent[] = [];
   
-  // Sample fewer dates for regional loading to keep it fast
+  // Sample more dates for regional loading to get more events
   const monthDayPairs: [number, number][] = [];
   
-  // Sample 2 days per month for regional loading
+  // Sample 4 days per month for regional loading (increased from 2)
   for (let month = 1; month <= 12; month++) {
     monthDayPairs.push([month, 1]);
-    monthDayPairs.push([month, 15]);
+    monthDayPairs.push([month, 10]);
+    monthDayPairs.push([month, 20]);
+    monthDayPairs.push([month, Math.min(month + 10, 28)]);
   }
   
-  // Fetch events for each date
-  const promises = monthDayPairs.map(([month, day]) => fetchEventsByDate(month, day));
+  // Fetch events from multiple sources for each date
+  const promises = monthDayPairs.map(([month, day]) => fetchFromMultipleSources(month, day));
   
   try {
     const results = await Promise.all(promises);

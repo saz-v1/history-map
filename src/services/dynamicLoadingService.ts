@@ -22,7 +22,7 @@ class DynamicLoadingService {
   };
 
   private throttleTimeout: number | null = null;
-  private readonly THROTTLE_DELAY = 2000; // 2 seconds between requests
+  private readonly THROTTLE_DELAY = 1000; // 1 second between requests (faster loading)
   private readonly MIN_ZOOM_LEVEL = 2; // Minimum zoom level for dynamic loading
 
   /**
@@ -112,8 +112,8 @@ class DynamicLoadingService {
    * Generate a unique key for a region based on bounds
    */
   private getRegionKey(bounds: MapBounds): string {
-    // Round bounds to create consistent regions
-    const roundTo = 10; // Round to nearest 10 degrees
+    // Round bounds to create consistent regions (larger regions = fewer requests)
+    const roundTo = 15; // Round to nearest 15 degrees for bigger regions
     const north = Math.round(bounds.north / roundTo) * roundTo;
     const south = Math.round(bounds.south / roundTo) * roundTo;
     const east = Math.round(bounds.east / roundTo) * roundTo;
