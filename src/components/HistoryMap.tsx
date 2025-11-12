@@ -33,23 +33,38 @@ function MapUpdater({
 }) {
   const map = useMap();
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const hasInitialBounds = React.useRef(false);
+  const userHasInteracted = React.useRef(false);
+  const lastEventCount = React.useRef(0);
   
+  // Only fit bounds on initial load or when event count changes significantly
   useEffect(() => {
-    if (events.length > 0) {
-      // Fit bounds to show all events with proper padding
-      const bounds = events.map(e => [e.latitude, e.longitude] as [number, number]);
-      if (bounds.length > 0) {
-        map.fitBounds(bounds, { 
-          padding: [50, 50], 
-          maxZoom: 5,
-          animate: true
-        });
+    if (events.length > 0 && !userHasInteracted.current) {
+      // Only auto-fit if:
+      // 1. We haven't set initial bounds yet, OR
+      // 2. Event count changed significantly (new data loaded)
+      const eventCountChanged = Math.abs(events.length - lastEventCount.current) > lastEventCount.current * 0.3;
+      
+      if (!hasInitialBounds.current || (eventCountChanged && lastEventCount.current > 0)) {
+        const bounds = events.map(e => [e.latitude, e.longitude] as [number, number]);
+        if (bounds.length > 0) {
+          map.fitBounds(bounds, { 
+            padding: [50, 50], 
+            maxZoom: 5,
+            animate: !hasInitialBounds.current // Only animate on first load
+          });
+          hasInitialBounds.current = true;
+        }
       }
+      lastEventCount.current = events.length;
     }
   }, [events, map]);
 
   // Handle map movement for dynamic loading
   const handleMapMove = useCallback(() => {
+    // Mark that user has interacted with the map
+    userHasInteracted.current = true;
+    
     const bounds = map.getBounds();
     const zoom = map.getZoom();
     
@@ -75,14 +90,24 @@ function MapUpdater({
     }
   }, [map, yearRange, onEventsLoaded]);
 
+  // Handle user interactions (click, drag, zoom) to prevent auto-reset
   useEffect(() => {
-    // Add event listeners for map movement
+    const handleUserInteraction = () => {
+      userHasInteracted.current = true;
+    };
+
     map.on('moveend', handleMapMove);
     map.on('zoomend', handleMapMove);
+    map.on('click', handleUserInteraction);
+    map.on('dragstart', handleUserInteraction);
+    map.on('zoomstart', handleUserInteraction);
 
     return () => {
       map.off('moveend', handleMapMove);
       map.off('zoomend', handleMapMove);
+      map.off('click', handleUserInteraction);
+      map.off('dragstart', handleUserInteraction);
+      map.off('zoomstart', handleUserInteraction);
     };
   }, [map, handleMapMove]);
   

@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import HistoryMap from './components/HistoryMap';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import FilterPanel from './components/FilterPanel';
 import Loading from './components/Loading';
 import type { HistoricalEvent } from './services/historyApi';
@@ -7,6 +6,9 @@ import { fetchHistoricalTimeline, getRandomYear, fetchEventsForYear } from './se
 import { cacheEvents, getCachedEvents } from './services/cacheService';
 import { geocodeEvents, getCachedGeocodedEvents, cacheGeocodedEvents, type GeocodedEvent } from './services/geocodingService';
 import { dynamicLoadingService } from './services/dynamicLoadingService';
+
+// Lazy load the heavy HistoryMap component to reduce initial bundle size
+const HistoryMap = lazy(() => import('./components/HistoryMap'));
 
 function App() {
   const [allEvents, setAllEvents] = useState<HistoricalEvent[]>([]);
@@ -191,13 +193,15 @@ function App() {
       {/* Map - Full Screen */}
       <div className="w-full h-full">
         {geocodedEvents.length > 0 ? (
-          <HistoryMap 
-            events={geocodedEvents}
-            selectedCategories={selectedCategories}
-            yearRange={yearRange}
-            searchTerm={searchTerm}
-            onEventsLoaded={handleEventsLoaded}
-          />
+          <Suspense fallback={<Loading />}>
+            <HistoryMap 
+              events={geocodedEvents}
+              selectedCategories={selectedCategories}
+              yearRange={yearRange}
+              searchTerm={searchTerm}
+              onEventsLoaded={handleEventsLoaded}
+            />
+          </Suspense>
         ) : (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
