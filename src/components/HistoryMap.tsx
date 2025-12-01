@@ -35,28 +35,26 @@ function MapUpdater({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const hasInitialBounds = React.useRef(false);
   const userHasInteracted = React.useRef(false);
-  const lastEventCount = React.useRef(0);
+  const isFirstLoad = React.useRef(true);
   
-  // Only fit bounds on initial load or when event count changes significantly
+  // Only fit bounds on the VERY FIRST load - never again after user interaction
   useEffect(() => {
-    if (events.length > 0 && !userHasInteracted.current) {
-      // Only auto-fit if:
-      // 1. We haven't set initial bounds yet, OR
-      // 2. Event count changed significantly (new data loaded)
-      const eventCountChanged = Math.abs(events.length - lastEventCount.current) > lastEventCount.current * 0.3;
-      
-      if (!hasInitialBounds.current || (eventCountChanged && lastEventCount.current > 0)) {
-        const bounds = events.map(e => [e.latitude, e.longitude] as [number, number]);
-        if (bounds.length > 0) {
-          map.fitBounds(bounds, { 
-            padding: [50, 50], 
-            maxZoom: 5,
-            animate: !hasInitialBounds.current // Only animate on first load
-          });
-          hasInitialBounds.current = true;
-        }
+    // Only auto-fit bounds on the absolute first load when we have events
+    // Once user interacts, NEVER auto-fit again
+    if (isFirstLoad.current && events.length > 0 && !userHasInteracted.current && !hasInitialBounds.current) {
+      const bounds = events.map(e => [e.latitude, e.longitude] as [number, number]);
+      if (bounds.length > 0) {
+        map.fitBounds(bounds, { 
+          padding: [50, 50], 
+          maxZoom: 5,
+          animate: true
+        });
+        hasInitialBounds.current = true;
+        isFirstLoad.current = false;
       }
-      lastEventCount.current = events.length;
+    } else if (events.length > 0) {
+      // Mark that we've loaded data (even if we didn't fit bounds)
+      isFirstLoad.current = false;
     }
   }, [events, map]);
 
@@ -97,14 +95,20 @@ function MapUpdater({
   // Handle user interactions (click, drag, zoom) to prevent auto-reset
   useEffect(() => {
     const handleUserInteraction = () => {
+      // Mark that user has interacted - this prevents ANY future auto-fit bounds
       userHasInteracted.current = true;
+      isFirstLoad.current = false; // Also mark that first load is done
     };
 
+    // Track all possible user interactions
     map.on('moveend', handleMapMove);
     map.on('zoomend', handleMapMove);
     map.on('click', handleUserInteraction);
     map.on('dragstart', handleUserInteraction);
     map.on('zoomstart', handleUserInteraction);
+    map.on('mousedown', handleUserInteraction); // Track mouse down for dragging
+    map.on('touchstart', handleUserInteraction); // Track touch for mobile
+    map.on('wheel', handleUserInteraction); // Track scroll wheel zoom
 
     return () => {
       map.off('moveend', handleMapMove);
@@ -112,6 +116,9 @@ function MapUpdater({
       map.off('click', handleUserInteraction);
       map.off('dragstart', handleUserInteraction);
       map.off('zoomstart', handleUserInteraction);
+      map.off('mousedown', handleUserInteraction);
+      map.off('touchstart', handleUserInteraction);
+      map.off('wheel', handleUserInteraction);
     };
   }, [map, handleMapMove]);
   
