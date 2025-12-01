@@ -68,25 +68,29 @@ function MapUpdater({
     const bounds = map.getBounds();
     const zoom = map.getZoom();
     
-    const mapBounds: MapBounds = {
-      north: bounds.getNorth(),
-      south: bounds.getSouth(),
-      east: bounds.getEast(),
-      west: bounds.getWest(),
-    };
+    // Lower the minimum zoom level to trigger loading earlier
+    // This makes the map more responsive to user interaction
+    if (zoom >= 1) { // Lowered from 2 to 1
+      const mapBounds: MapBounds = {
+        north: bounds.getNorth(),
+        south: bounds.getSouth(),
+        east: bounds.getEast(),
+        west: bounds.getWest(),
+      };
 
-    // Check if we should load more events
-    if (dynamicLoadingService.shouldLoadEvents(mapBounds, zoom)) {
-      dynamicLoadingService.loadEventsForRegion(
-        mapBounds,
-        yearRange,
-        (newEvents) => {
-          if (onEventsLoaded && newEvents.length > 0) {
-            onEventsLoaded(newEvents);
-          }
-        },
-        setIsLoadingMore
-      );
+      // Check if we should load more events
+      if (dynamicLoadingService.shouldLoadEvents(mapBounds, zoom)) {
+        dynamicLoadingService.loadEventsForRegion(
+          mapBounds,
+          yearRange,
+          (newEvents) => {
+            if (onEventsLoaded && newEvents.length > 0) {
+              onEventsLoaded(newEvents);
+            }
+          },
+          setIsLoadingMore
+        );
+      }
     }
   }, [map, yearRange, onEventsLoaded]);
 

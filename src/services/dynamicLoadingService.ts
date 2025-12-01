@@ -22,8 +22,8 @@ class DynamicLoadingService {
   };
 
   private throttleTimeout: number | null = null;
-  private readonly THROTTLE_DELAY = 1000; // 1 second between requests (faster loading)
-  private readonly MIN_ZOOM_LEVEL = 2; // Minimum zoom level for dynamic loading
+  private readonly THROTTLE_DELAY = 500; // Reduced to 500ms for faster response
+  private readonly MIN_ZOOM_LEVEL = 1; // Lowered to 1 for earlier loading
 
   /**
    * Check if we should load events for the current map bounds
@@ -113,7 +113,8 @@ class DynamicLoadingService {
    */
   private getRegionKey(bounds: MapBounds): string {
     // Round bounds to create consistent regions (larger regions = fewer requests)
-    const roundTo = 15; // Round to nearest 15 degrees for bigger regions
+    // Reduced roundTo for more granular region detection
+    const roundTo = 10; // Reduced from 15 to 10 for better region detection
     const north = Math.round(bounds.north / roundTo) * roundTo;
     const south = Math.round(bounds.south / roundTo) * roundTo;
     const east = Math.round(bounds.east / roundTo) * roundTo;

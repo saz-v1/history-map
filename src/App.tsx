@@ -13,32 +13,29 @@ const HistoryMap = lazy(() => import('./components/HistoryMap'));
 function App() {
   const [allEvents, setAllEvents] = useState<HistoricalEvent[]>([]);
   const [geocodedEvents, setGeocodedEvents] = useState<GeocodedEvent[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Start as false - no initial load
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [yearRange] = useState<[number, number]>([1000, 2024]);
+  const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
 
-  // Load events on mount
+  // Load minimal cached data on mount (if available) - no API calls
   useEffect(() => {
-    loadEvents();
+    loadCachedDataOnly();
   }, []);
 
-  // Note: Filtering is now handled directly in the HistoryMap component
-
-  const loadEvents = async () => {
-    setIsLoading(true);
-    console.log('App: Starting to load events...');
-    
+  // Load only cached data - no API calls, instant load
+  const loadCachedDataOnly = () => {
     // Try to load geocoded events from cache first
     const cachedGeocoded = getCachedGeocodedEvents();
-    console.log('App: Cached geocoded events:', cachedGeocoded?.length || 0);
     if (cachedGeocoded && cachedGeocoded.length > 0) {
-      console.log('App: Using cached geocoded events');
-      setGeocodedEvents(cachedGeocoded);
-      setAllEvents(cachedGeocoded);
-      extractCategories(cachedGeocoded);
-      setIsLoading(false);
+      // Limit to first 100 events for faster initial render
+      const limitedEvents = cachedGeocoded.slice(0, 100);
+      setGeocodedEvents(limitedEvents);
+      setAllEvents(limitedEvents);
+      extractCategories(cachedGeocoded); // Use full categories from cache
+      setHasLoadedInitialData(true);
       return;
     }
     
@@ -46,21 +43,28 @@ function App() {
     const cached = getCachedEvents();
     if (cached && cached.length > 0) {
       const geocoded = geocodeEvents(cached);
-      setGeocodedEvents(geocoded);
-      setAllEvents(cached);
-      extractCategories(cached);
+      // Limit to first 100 events for faster initial render
+      const limitedEvents = geocoded.slice(0, 100);
+      setGeocodedEvents(limitedEvents);
+      setAllEvents(limitedEvents);
+      extractCategories(cached); // Use full categories from cache
       cacheGeocodedEvents(geocoded);
-      setIsLoading(false);
+      setHasLoadedInitialData(true);
       return;
     }
+    
+    // No cache - start with empty map, user can load data manually
+    setHasLoadedInitialData(false);
+  };
 
-    // Fetch from API
+  // Load events from API - only called when user explicitly requests it
+  const loadEvents = async () => {
+    setIsLoading(true);
+    
     try {
-      console.log('App: Fetching events from API...');
+      // Fetch a smaller initial dataset - only 2 days per month for faster loading
       const events = await fetchHistoricalTimeline();
-      console.log('App: Fetched events:', events.length);
       const geocoded = geocodeEvents(events);
-      console.log('App: Geocoded events:', geocoded.length);
       setGeocodedEvents(geocoded);
       setAllEvents(events);
       extractCategories(events);
@@ -68,22 +72,9 @@ function App() {
       // Cache for next time
       cacheEvents(events);
       cacheGeocodedEvents(geocoded);
-      console.log('App: Events loaded and cached successfully');
+      setHasLoadedInitialData(true);
     } catch (error) {
       console.error('Error loading events:', error);
-      console.error('Error details:', error);
-      // Set some fallback data to prevent white screen
-      const fallbackEvents: HistoricalEvent[] = [{
-        year: 1969,
-        title: 'Apollo 11 Moon Landing',
-        description: 'Neil Armstrong becomes the first person to walk on the Moon.',
-        category: 'Science',
-        url: 'https://en.wikipedia.org/wiki/Apollo_11'
-      }];
-      const fallbackGeocoded = geocodeEvents(fallbackEvents);
-      setGeocodedEvents(fallbackGeocoded);
-      setAllEvents(fallbackEvents);
-      extractCategories(fallbackEvents);
     } finally {
       setIsLoading(false);
     }
@@ -135,8 +126,26 @@ function App() {
   const handleRefresh = () => {
     // Reset dynamic loading service
     dynamicLoadingService.reset();
+    // Clear cache and reload
+    setGeocodedEvents([]);
+    setAllEvents([]);
     loadEvents();
   };
+
+  // Load events when user searches (only if no data loaded yet)
+  useEffect(() => {
+    if (searchTerm.trim() && searchTerm.length >= 3 && !hasLoadedInitialData && !isLoading) {
+      // User is searching - load minimal data
+      const timeoutId = setTimeout(() => {
+        if (!hasLoadedInitialData && !isLoading) {
+          loadEvents();
+        }
+      }, 800); // Debounce search
+      
+      return () => clearTimeout(timeoutId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm]);
 
   const handleEventsLoaded = (newEvents: GeocodedEvent[]) => {
     // Add new events to existing ones, avoiding duplicates
@@ -185,35 +194,45 @@ function App() {
             onSearchChange={setSearchTerm}
             onRandomYear={handleRandomYear}
             onRefresh={handleRefresh}
+            onLoadEvents={loadEvents}
             isLoading={isLoading}
+            hasData={hasLoadedInitialData || allEvents.length > 0}
           />
         </div>
       </div>
 
       {/* Map - Full Screen */}
       <div className="w-full h-full">
-        {geocodedEvents.length > 0 ? (
-          <Suspense fallback={<Loading />}>
-            <HistoryMap 
-              events={geocodedEvents}
-              selectedCategories={selectedCategories}
-              yearRange={yearRange}
-              searchTerm={searchTerm}
-              onEventsLoaded={handleEventsLoaded}
-            />
-          </Suspense>
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
+        <Suspense fallback={<Loading />}>
+          <HistoryMap 
+            events={geocodedEvents}
+            selectedCategories={selectedCategories}
+            yearRange={yearRange}
+            searchTerm={searchTerm}
+            onEventsLoaded={handleEventsLoaded}
+          />
+        </Suspense>
+        {geocodedEvents.length === 0 && !isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-900/80 backdrop-blur-sm z-[500]">
+            <div className="text-center max-w-md px-4">
               <div className="text-6xl mb-4">🗺️</div>
-              <h2 className="text-2xl font-bold text-white mb-2">No events found</h2>
-              <p className="text-gray-400">Try adjusting your filters or search term</p>
-              <button 
-                onClick={handleRefresh}
-                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Refresh Data
-              </button>
+              <h2 className="text-2xl font-bold text-white mb-2">
+                {hasLoadedInitialData ? 'No events found' : 'Explore Historical Events'}
+              </h2>
+              <p className="text-gray-400 mb-4">
+                {hasLoadedInitialData 
+                  ? 'Try adjusting your filters or search term'
+                  : 'Zoom in on the map, search for events, or click "Load Events" to get started'}
+              </p>
+              {!hasLoadedInitialData && (
+                <button 
+                  onClick={loadEvents}
+                  disabled={isLoading}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                >
+                  {isLoading ? 'Loading Events...' : '📊 Load Events'}
+                </button>
+              )}
             </div>
           </div>
         )}

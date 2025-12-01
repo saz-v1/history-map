@@ -8,7 +8,9 @@ interface FilterPanelProps {
   onSearchChange: (term: string) => void;
   onRandomYear: () => void;
   onRefresh: () => void;
+  onLoadEvents?: () => void;
   isLoading: boolean;
+  hasData: boolean;
 }
 
 const FilterPanel: React.FC<FilterPanelProps> = ({
@@ -19,7 +21,9 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   onSearchChange,
   onRandomYear,
   onRefresh,
+  onLoadEvents,
   isLoading,
+  hasData,
 }) => {
   return (
     <div className="flex flex-col gap-2 sm:gap-3">
@@ -56,20 +60,33 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 
       {/* Action Buttons */}
       <div className="flex gap-1 sm:gap-2 pt-2 border-t border-gray-700/30">
-        <button
-          onClick={onRandomYear}
-          disabled={isLoading}
-          className="flex-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg px-2 py-1.5 sm:px-3 sm:py-2 text-xs font-medium transition-colors border border-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          🎲 Random
-        </button>
-        <button
-          onClick={onRefresh}
-          disabled={isLoading}
-          className="bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 rounded-lg px-2 py-1.5 sm:px-3 sm:py-2 text-xs font-medium transition-colors border border-gray-600/30 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isLoading ? '⟳' : '↻'}
-        </button>
+        {!hasData && onLoadEvents && (
+          <button
+            onClick={onLoadEvents}
+            disabled={isLoading}
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-3 py-2 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? 'Loading...' : '📊 Load Events'}
+          </button>
+        )}
+        {hasData && (
+          <>
+            <button
+              onClick={onRandomYear}
+              disabled={isLoading}
+              className="flex-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg px-2 py-1.5 sm:px-3 sm:py-2 text-xs font-medium transition-colors border border-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              🎲 Random
+            </button>
+            <button
+              onClick={onRefresh}
+              disabled={isLoading}
+              className="bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 rounded-lg px-2 py-1.5 sm:px-3 sm:py-2 text-xs font-medium transition-colors border border-gray-600/30 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? '⟳' : '↻'}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

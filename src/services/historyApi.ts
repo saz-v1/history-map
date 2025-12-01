@@ -245,6 +245,34 @@ export async function fetchEventsForYear(year?: number): Promise<HistoricalEvent
 }
 
 /**
+ * Fetch a minimal dataset - only 2 days per month for fast initial loading
+ */
+export async function fetchMinimalTimeline(): Promise<HistoricalEvent[]> {
+  const allEvents: HistoricalEvent[] = [];
+  const monthDayPairs: [number, number][] = [];
+  
+  // Only 2 days per month for minimal/fast loading
+  for (let month = 1; month <= 12; month++) {
+    monthDayPairs.push([month, 1]);
+    monthDayPairs.push([month, 15]);
+  }
+  
+  // Fetch all in parallel for speed
+  const promises = monthDayPairs.map(([month, day]) => fetchFromMultipleSources(month, day));
+  
+  try {
+    const results = await Promise.all(promises);
+    results.forEach(events => {
+      allEvents.push(...events);
+    });
+  } catch (error) {
+    console.error('Error in minimal fetch:', error);
+  }
+  
+  return allEvents.sort((a, b) => a.year - b.year);
+}
+
+/**
  * Fetch a large dataset of historical events by sampling multiple dates
  */
 export async function fetchHistoricalTimeline(): Promise<HistoricalEvent[]> {
@@ -253,17 +281,10 @@ export async function fetchHistoricalTimeline(): Promise<HistoricalEvent[]> {
   // Fetch events from various dates throughout the year for diversity
   const monthDayPairs: [number, number][] = [];
   
-  // Reduced to 4 days per month to minimize network payloads while maintaining diversity
-  // This reduces API calls by ~50% and significantly reduces total payload size
+  // Reduced to 2 days per month for faster loading (was 4)
   for (let month = 1; month <= 12; month++) {
     monthDayPairs.push([month, 1]);
-    monthDayPairs.push([month, 10]);
-    monthDayPairs.push([month, 20]);
-    if (month !== 2) {
-      monthDayPairs.push([month, 28]);
-    } else {
-      monthDayPairs.push([month, 15]); // February alternative
-    }
+    monthDayPairs.push([month, 15]);
   }
   
   // Fetch in larger parallel batches for better performance
