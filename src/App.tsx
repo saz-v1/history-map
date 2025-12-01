@@ -15,6 +15,16 @@ function App() {
   const [geocodedEvents, setGeocodedEvents] = useState<GeocodedEvent[]>([]);
   const [isLoading, setIsLoading] = useState(false); // Start as false - no initial load
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  
+  // Debounce search input for better performance
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [yearRange] = useState<[number, number]>([1000, 2024]);
@@ -190,7 +200,7 @@ function App() {
             categories={availableCategories}
             selectedCategories={selectedCategories}
             onToggleCategory={handleToggleCategory}
-            searchTerm={searchTerm}
+            searchTerm={debouncedSearchTerm}
             onSearchChange={setSearchTerm}
             onRandomYear={handleRandomYear}
             onRefresh={handleRefresh}
@@ -208,7 +218,7 @@ function App() {
             events={geocodedEvents}
             selectedCategories={selectedCategories}
             yearRange={yearRange}
-            searchTerm={searchTerm}
+            searchTerm={debouncedSearchTerm}
             onEventsLoaded={handleEventsLoaded}
           />
         </Suspense>

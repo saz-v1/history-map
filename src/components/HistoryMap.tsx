@@ -25,11 +25,13 @@ interface HistoryMapProps {
 function MapUpdater({ 
   events, 
   yearRange, 
-  onEventsLoaded 
+  onEventsLoaded,
+  onMapMove
 }: { 
   events: GeocodedEvent[];
   yearRange: [number, number];
   onEventsLoaded?: (newEvents: GeocodedEvent[]) => void;
+  onMapMove?: (bounds?: L.LatLngBounds) => void;
 }) {
   const map = useMap();
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -59,12 +61,17 @@ function MapUpdater({
   }, [events, map]);
 
   // Handle map movement for dynamic loading
-  const handleMapMove = useCallback(() => {
+  const handleMapMoveInternal = useCallback(() => {
     // Mark that user has interacted with the map
     userHasInteracted.current = true;
     
     const bounds = map.getBounds();
     const zoom = map.getZoom();
+    
+    // Notify parent component of map movement
+    if (onMapMove) {
+      onMapMove(bounds);
+    }
     
     // Lower the minimum zoom level to trigger loading earlier
     // This makes the map more responsive to user interaction
@@ -90,7 +97,7 @@ function MapUpdater({
         );
       }
     }
-  }, [map, yearRange, onEventsLoaded]);
+  }, [map, yearRange, onEventsLoaded, onMapMove]);
 
   // Handle user interactions (click, drag, zoom) to prevent auto-reset
   useEffect(() => {
@@ -101,8 +108,8 @@ function MapUpdater({
     };
 
     // Track all possible user interactions
-    map.on('moveend', handleMapMove);
-    map.on('zoomend', handleMapMove);
+    map.on('moveend', handleMapMoveInternal);
+    map.on('zoomend', handleMapMoveInternal);
     map.on('click', handleUserInteraction);
     map.on('dragstart', handleUserInteraction);
     map.on('zoomstart', handleUserInteraction);
@@ -111,8 +118,8 @@ function MapUpdater({
     map.on('wheel', handleUserInteraction); // Track scroll wheel zoom
 
     return () => {
-      map.off('moveend', handleMapMove);
-      map.off('zoomend', handleMapMove);
+      map.off('moveend', handleMapMoveInternal);
+      map.off('zoomend', handleMapMoveInternal);
       map.off('click', handleUserInteraction);
       map.off('dragstart', handleUserInteraction);
       map.off('zoomstart', handleUserInteraction);
@@ -120,7 +127,7 @@ function MapUpdater({
       map.off('touchstart', handleUserInteraction);
       map.off('wheel', handleUserInteraction);
     };
-  }, [map, handleMapMove]);
+  }, [map, handleMapMoveInternal]);
   
   return (
     <>
@@ -144,28 +151,107 @@ const HistoryMap: React.FC<HistoryMapProps> = ({
   onEventsLoaded 
 }) => {
   const [mapReady, setMapReady] = useState(false);
-
-  // Filter events by category, year range, and search term
-  const filteredEvents = useMemo(() => {
-    return events.filter(event => {
-      const categoryMatch = selectedCategories.size === 0 || selectedCategories.has(event.category);
-      const yearMatch = event.year >= yearRange[0] && event.year <= yearRange[1];
+  const [mapBounds, setMapBounds] = useState<L.LatLngBounds | null>(null);
+  
+  // Component to get map instance and track bounds
+  function MapBoundsTracker({ onBoundsChange }: { onBoundsChange: (bounds: L.LatLngBounds) => void }) {
+    const map = useMap();
+    
+    useEffect(() => {
+      const updateBounds = () => {
+        onBoundsChange(map.getBounds());
+      };
       
-      // Search filter
-      let searchMatch = true;
-      if (searchTerm.trim()) {
-        const term = searchTerm.toLowerCase();
-        searchMatch = 
-          event.title.toLowerCase().includes(term) ||
-          event.description.toLowerCase().includes(term) ||
-          event.year.toString().includes(term);
+      updateBounds();
+      map.on('moveend', updateBounds);
+      map.on('zoomend', updateBounds);
+      
+      return () => {
+        map.off('moveend', updateBounds);
+        map.off('zoomend', updateBounds);
+      };
+    }, [map, onBoundsChange]);
+    
+    return null;
+  }
+  
+  const handleBoundsChange = useCallback((bounds?: L.LatLngBounds) => {
+    if (bounds) {
+      setMapBounds(bounds);
+    }
+  }, []);
+
+  // Debounced search term to reduce filtering operations
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300); // 300ms debounce
+    
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Optimized filtering with early exits
+  const filteredEvents = useMemo(() => {
+    if (events.length === 0) return [];
+    
+    const hasSearch = debouncedSearchTerm.trim().length > 0;
+    const searchLower = hasSearch ? debouncedSearchTerm.toLowerCase() : '';
+    const hasCategoryFilter = selectedCategories.size > 0;
+    
+    return events.filter(event => {
+      // Early exit for category filter
+      if (hasCategoryFilter && !selectedCategories.has(event.category)) {
+        return false;
       }
       
-      return categoryMatch && yearMatch && searchMatch;
+      // Early exit for year filter
+      if (event.year < yearRange[0] || event.year > yearRange[1]) {
+        return false;
+      }
+      
+      // Search filter (only if search term exists)
+      if (hasSearch) {
+        const titleMatch = event.title.toLowerCase().includes(searchLower);
+        const descMatch = event.description.toLowerCase().includes(searchLower);
+        const yearMatch = event.year.toString().includes(searchLower);
+        
+        if (!titleMatch && !descMatch && !yearMatch) {
+          return false;
+        }
+      }
+      
+      return true;
     });
-  }, [events, selectedCategories, yearRange, searchTerm]);
+  }, [events, selectedCategories, yearRange, debouncedSearchTerm]);
 
-  const getCategoryColor = (category: string): string => {
+  // Filter events by viewport bounds for performance
+  const visibleEvents = useMemo(() => {
+    if (!mapBounds || filteredEvents.length === 0) {
+      // Limit to 500 markers max if no bounds (initial load)
+      return filteredEvents.slice(0, 500);
+    }
+    
+    // Only show events in current viewport + small buffer
+    const bounds = mapBounds;
+    const buffer = 0.1; // 10% buffer
+    
+    const visible = filteredEvents.filter(event => {
+      return (
+        event.latitude >= bounds.getSouth() - buffer &&
+        event.latitude <= bounds.getNorth() + buffer &&
+        event.longitude >= bounds.getWest() - buffer &&
+        event.longitude <= bounds.getEast() + buffer
+      );
+    });
+    
+    // Limit to 1000 markers max for performance
+    return visible.slice(0, 1000);
+  }, [filteredEvents, mapBounds]);
+
+  // Memoize color function to avoid recreating on every render
+  const getCategoryColor = useCallback((category: string): string => {
     const colors: Record<string, string> = {
       Science: '#3b82f6',
       Politics: '#ef4444',
@@ -177,13 +263,15 @@ const HistoryMap: React.FC<HistoryMapProps> = ({
       General: '#6b7280',
     };
     return colors[category] || colors.General;
-  };
+  }, []);
 
-  const getEventSize = (event: GeocodedEvent): number => {
+  // Memoize size function
+  const getEventSize = useCallback((event: GeocodedEvent): number => {
     // Size based on year (more recent = larger)
     const yearFactor = Math.min((event.year - 1000) / 1000, 1);
     return 4 + yearFactor * 8;
-  };
+  }, []);
+
 
   if (events.length === 0) {
     return (
@@ -202,7 +290,9 @@ const HistoryMap: React.FC<HistoryMapProps> = ({
         maxZoom={6}
         style={{ height: '100%', width: '100%' }}
         className="z-0"
-        whenReady={() => setMapReady(true)}
+        whenReady={() => {
+          setMapReady(true);
+        }}
         zoomControl={true}
         scrollWheelZoom={true}
         doubleClickZoom={true}
@@ -222,16 +312,28 @@ const HistoryMap: React.FC<HistoryMapProps> = ({
           maxZoom={19}
         />
         
-        {mapReady && <MapUpdater events={filteredEvents} yearRange={yearRange} onEventsLoaded={onEventsLoaded} />}
+        {mapReady && (
+          <>
+            <MapBoundsTracker onBoundsChange={handleBoundsChange} />
+            <MapUpdater 
+              events={filteredEvents} 
+              yearRange={yearRange} 
+              onEventsLoaded={onEventsLoaded}
+              onMapMove={handleBoundsChange}
+            />
+          </>
+        )}
         
         <MarkerClusterGroup
-          chunkedLoading
-          maxClusterRadius={50}
+          chunkedLoading={true}
+          chunkDelay={100}
+          maxClusterRadius={zoom => zoom < 3 ? 80 : 50}
           spiderfyOnMaxZoom={true}
           showCoverageOnHover={false}
           zoomToBoundsOnClick={true}
+          disableClusteringAtZoom={5}
         >
-          {filteredEvents.map((event, index) => (
+          {visibleEvents.map((event, index) => (
             <CircleMarker
               key={`${event.year}-${index}`}
               center={[event.latitude, event.longitude]}
@@ -274,7 +376,7 @@ const HistoryMap: React.FC<HistoryMapProps> = ({
       {/* Event count indicator */}
       <div className="absolute top-4 right-4 z-[1000] bg-gray-800/90 backdrop-blur-sm rounded-lg p-3 border border-gray-600/30">
         <div className="text-white text-sm">
-          <span className="font-bold">{filteredEvents.length}</span> events shown
+          <span className="font-bold">{visibleEvents.length}</span> of <span className="font-bold">{filteredEvents.length}</span> events
         </div>
       </div>
     </div>
