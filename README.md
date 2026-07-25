@@ -1,392 +1,386 @@
-# 🕰️ TimeScape - The Dynamic Interactive History Timeline
+# TimeScape
 
-<div align="center">
+TimeScape is a web application that displays historical events on an interactive timeline.
 
-![TimeScape](https://img.shields.io/badge/TimeScape-History_Visualizer-blue?style=for-the-badge)
-![React](https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?style=for-the-badge&logo=typescript)
-![D3.js](https://img.shields.io/badge/D3.js-7.9-F9A03C?style=for-the-badge&logo=d3.js)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css)
+The application gets historical event data from the Wikipedia and byabbe.se APIs. It displays the data with D3.js. You can search, filter, and explore historical events in the browser.
 
-**A visually stunning, browser-based timeline that fetches and visualizes real-world historical events dynamically from Wikipedia and byabbe.se APIs.**
+## Features
 
-[Features](#-features) • [Demo](#-demo) • [Installation](#-installation) • [Usage](#-usage) • [Architecture](#-architecture) • [Deployment](#-deployment)
+The application can:
 
-</div>
+* Get historical events from the Wikipedia and byabbe.se APIs.
+* Display events on an interactive timeline.
+* Search events by year, title, or description.
+* Filter events by category.
+* Cache event data for seven days.
+* Open a random year.
+* Open Wikipedia articles for selected events.
+* Display historical eras with colour coding.
+* Run on desktop, tablet, and mobile devices.
 
----
+## Requirements
 
-## ✨ Features
+You must have:
 
-### Core Functionality
-- **🌐 Dynamic Data Fetching** - Real historical events pulled from Wikipedia and byabbe.se APIs
-- **📊 D3.js Visualization** - Smooth, scalable timeline rendering with thousands of events
-- **🎨 Beautiful UI** - Dark theme with glowing event nodes and glass morphism effects
-- **🔍 Smart Search** - Search by year, title, or event description
-- **🏷️ Category Filtering** - Filter events by Science, Politics, Culture, Sports, Technology, Nature, Society
-- **💾 Local Caching** - Events cached for 7 days to reduce API calls and improve performance
-- **🎲 Random Year Explorer** - Jump to random historical moments with one click
-- **📱 Fully Responsive** - Optimized for desktop, tablet, and mobile devices
+* Node.js 18 or later
+* npm or Yarn
+* A modern web browser
 
-### Interactive Features
-- **🔎 Zoom & Pan** - Smooth zoom controls powered by D3.js
-- **✨ Hover Tooltips** - Rich tooltips with event details on hover
-- **🎭 GSAP Animations** - Smooth entrance and interaction animations
-- **🔗 Direct Links** - Click events to read full articles on Wikipedia
-- **🎯 Era Visualization** - Color-coded historical eras (Ancient, Medieval, Modern, etc.)
+Supported browsers include:
 
-### Technical Features
-- **⚡ Fast Performance** - Optimized rendering for 60+ FPS
-- **🛡️ Error Handling** - Graceful fallbacks for API failures
-- **🎯 Type Safety** - Full TypeScript implementation
-- **♻️ Modular Architecture** - Clean separation of concerns
+* Google Chrome
+* Mozilla Firefox
+* Microsoft Edge
+* Safari
 
----
+## Installation
 
-## 🚀 Demo
+1. Go to the project directory.
 
-### Screenshots
-
-**Main Timeline View:**
-- Horizontal timeline spanning centuries
-- Color-coded event nodes by category
-- Era bands showing historical periods
-
-**Interactive Tooltip:**
-- Event title, year, and description
-- Category badge
-- Direct link to Wikipedia article
-
-**Filter Panel:**
-- Search bar for filtering events
-- Category toggles
-- Random Year and Refresh buttons
-
----
-
-## 📦 Installation
-
-### Prerequisites
-- Node.js 18+ and npm/yarn
-- Modern web browser (Chrome, Firefox, Safari, Edge)
-
-### Setup
-
-1. **Clone or download the project**
-   ```bash
-   cd "/Users/ahtisham/Desktop/history map"
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Start development server**
-   ```bash
-   npm run dev
-   ```
-
-4. **Open in browser**
-   ```
-   http://localhost:5173
-   ```
-
----
-
-## 🎮 Usage
-
-### Navigation
-- **Scroll**: Zoom in/out on the timeline
-- **Drag**: Pan left/right across centuries
-- **Hover**: View event details in tooltip
-- **Click**: Open Wikipedia article in new tab
-
-### Filtering
-- **Search Bar**: Type keywords, years, or descriptions
-- **Category Filters**: Click category badges to toggle visibility
-- **Random Year**: Load events from a random year in history
-- **Refresh**: Reload all events from APIs
-
-### Performance Tips
-- Events are cached locally for 7 days
-- Use category filters to reduce visible nodes
-- Search for specific years for focused exploration
-
----
-
-## 🏗️ Architecture
-
-### Project Structure
+```bash
+cd history-map
 ```
-history map/
+
+2. Install the dependencies.
+
+```bash
+npm install
+```
+
+3. Start the development server.
+
+```bash
+npm run dev
+```
+
+4. Open the application in your browser.
+
+```text
+http://localhost:5173
+```
+
+## Usage
+
+### Navigate the Timeline
+
+| Action | Result                              |
+| ------ | ----------------------------------- |
+| Scroll | Zoom the timeline.                  |
+| Drag   | Move across the timeline.           |
+| Hover  | Show event information.             |
+| Click  | Open the related Wikipedia article. |
+
+### Filter Events
+
+* Enter text in the search field.
+* Select one or more categories.
+* Select **Random Year** to load a random year.
+* Select **Refresh** to load the latest event data.
+
+### Performance
+
+* The application stores event data for seven days.
+* Use category filters to reduce the number of displayed events.
+* Search for a specific year to display fewer events.
+
+## Project Structure
+
+```text
+history-map/
 ├── src/
 │   ├── components/
-│   │   ├── Timeline.tsx          # Main D3.js timeline visualization
-│   │   ├── Tooltip.tsx           # Event tooltip component
-│   │   ├── FilterPanel.tsx       # Search and filter controls
-│   │   └── Loading.tsx           # Loading spinner
+│   │   ├── Timeline.tsx
+│   │   ├── Tooltip.tsx
+│   │   ├── FilterPanel.tsx
+│   │   └── Loading.tsx
 │   ├── services/
-│   │   ├── historyApi.ts         # API integration layer
-│   │   └── cacheService.ts       # Local storage caching
-│   ├── App.tsx                   # Main app component
-│   ├── index.css                 # Tailwind styles
-│   └── main.tsx                  # Entry point
+│   │   ├── historyApi.ts
+│   │   └── cacheService.ts
+│   ├── App.tsx
+│   ├── main.tsx
+│   └── index.css
 ├── tailwind.config.js
 ├── vite.config.ts
 └── package.json
 ```
 
-### Tech Stack
+## Architecture
 
-| Technology | Purpose |
-|-----------|---------|
-| **React 18** | UI framework with hooks |
-| **TypeScript** | Type safety and IDE support |
-| **Vite** | Fast build tool and dev server |
-| **D3.js** | Timeline visualization and scaling |
-| **GSAP** | Smooth animations |
-| **Tailwind CSS** | Utility-first styling |
-| **Axios** | HTTP requests to APIs |
+### Components
+
+| Component         | Purpose                              |
+| ----------------- | ------------------------------------ |
+| `App.tsx`         | Controls application state.          |
+| `Timeline.tsx`    | Displays the timeline with D3.js.    |
+| `Tooltip.tsx`     | Displays event information.          |
+| `FilterPanel.tsx` | Provides search and filter controls. |
+| `Loading.tsx`     | Displays the loading indicator.      |
+| `historyApi.ts`   | Gets and processes event data.       |
+| `cacheService.ts` | Stores cached data in local storage. |
 
 ### Data Flow
 
-```
-API Sources (Wikipedia/byabbe.se)
-        ↓
-  historyApi.ts (fetch & normalize)
-        ↓
-  cacheService.ts (local storage)
-        ↓
-   App.tsx (state management)
-        ↓
-  Timeline.tsx (D3.js rendering)
-        ↓
-   User Browser (interactive visualization)
+```text
+Wikipedia API / byabbe.se API
+            │
+            ▼
+     historyApi.ts
+            │
+            ▼
+    cacheService.ts
+            │
+            ▼
+         App.tsx
+            │
+            ▼
+     Timeline.tsx
+            │
+            ▼
+          Browser
 ```
 
-### API Integration
+## Technologies
 
-**Primary Source: byabbe.se**
-```typescript
+| Technology   | Purpose                             |
+| ------------ | ----------------------------------- |
+| React        | User interface                      |
+| TypeScript   | Type checking                       |
+| Vite         | Build system and development server |
+| D3.js        | Timeline rendering                  |
+| Tailwind CSS | Styling                             |
+| GSAP         | Animation                           |
+| Axios        | HTTP requests                       |
+
+## API Sources
+
+### byabbe.se
+
+```text
 https://byabbe.se/on-this-day/{month}/{day}/events.json
 ```
-- Returns historical events for any date
-- Includes Wikipedia links
-- Free, no authentication required
 
-**Fallback: Wikipedia REST API**
-```typescript
+This API:
+
+* Returns historical events.
+* Includes Wikipedia links.
+* Does not require authentication.
+
+### Wikipedia REST API
+
+```text
 https://en.wikipedia.org/api/rest_v1/feed/onthisday/events/{month}/{day}
 ```
-- Official Wikipedia API
-- Rich event descriptions
-- Full article access
 
-### Event Data Model
+This API:
+
+* Returns historical events.
+* Provides event descriptions.
+* Provides links to Wikipedia articles.
+
+## Event Model
 
 ```typescript
 interface HistoricalEvent {
-  year: number;           // Year of event
-  title: string;          // Event title
-  description: string;    // Full description
-  category: string;       // Auto-categorized
-  url: string;           // Wikipedia link
-  month?: number;        // Optional month
-  day?: number;          // Optional day
+  year: number;
+  title: string;
+  description: string;
+  category: string;
+  url: string;
+  month?: number;
+  day?: number;
 }
 ```
 
-Events are automatically categorized using keyword matching:
-- **Science**: space, discovery, Nobel, physics, etc.
-- **Politics**: war, election, treaty, revolution, etc.
-- **Culture**: art, music, literature, film, etc.
-- **Sports**: Olympic, championship, record, etc.
-- **Technology**: computer, internet, innovation, etc.
-- **Nature**: earthquake, volcano, climate, etc.
-- **Society**: civil rights, law, education, etc.
+The application assigns categories by keyword matching.
 
----
+The default categories are:
 
-## 🎨 Design System
+* Science
+* Politics
+* Culture
+* Sports
+* Technology
+* Nature
+* Society
 
-### Colors
-- **Background**: `#0a0e27` (deep navy)
-- **Accent**: `#3b82f6` (blue-500)
-- **Text**: White/Gray gradient
-- **Categories**: Color-coded by type
+## Build
 
-### Typography
-- **Sans-serif**: Inter (400-800 weights)
-- **Monospace**: IBM Plex Mono (for years)
-
-### Animations
-- **Entrance**: Staggered fade-in for events
-- **Hover**: Scale and glow on event nodes
-- **Tooltip**: Smooth fade with backdrop blur
-- **Zoom**: Smooth D3.js transitions
-
----
-
-## 🚢 Deployment
-
-### Build for Production
+Create a production build.
 
 ```bash
 npm run build
 ```
 
-This creates an optimized production build in the `dist/` folder.
+The build output is stored in the `dist` directory.
 
-### Deploy to Vercel
+## Deployment
 
-1. Install Vercel CLI:
-   ```bash
-   npm i -g vercel
-   ```
+### Vercel
 
-2. Deploy:
-   ```bash
-   vercel
-   ```
+Install the Vercel CLI.
 
-3. Follow prompts to connect your project
-
-### Deploy to Netlify
-
-1. Build the project:
-   ```bash
-   npm run build
-   ```
-
-2. Drag and drop the `dist/` folder to [Netlify Drop](https://app.netlify.com/drop)
-
-Or use Netlify CLI:
 ```bash
-npm i -g netlify-cli
+npm install -g vercel
+```
+
+Deploy the application.
+
+```bash
+vercel
+```
+
+### Netlify
+
+Build the application.
+
+```bash
+npm run build
+```
+
+Deploy the `dist` directory with Netlify.
+
+Or use the Netlify CLI.
+
+```bash
+npm install -g netlify-cli
 netlify deploy --prod --dir=dist
 ```
 
-### Deploy to GitHub Pages
+### GitHub Pages
 
-1. Install gh-pages:
-   ```bash
-   npm i -D gh-pages
-   ```
+Install `gh-pages`.
 
-2. Add to `package.json`:
-   ```json
-   "scripts": {
-     "deploy": "vite build && gh-pages -d dist"
-   }
-   ```
-
-3. Update `vite.config.ts`:
-   ```typescript
-   export default defineConfig({
-     base: '/history-map/',  // Your repo name
-   })
-   ```
-
-4. Deploy:
-   ```bash
-   npm run deploy
-   ```
-
----
-
-## 🔧 Configuration
-
-### Adjust Cache Duration
-
-Edit `src/services/cacheService.ts`:
-```typescript
-const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
+```bash
+npm install --save-dev gh-pages
 ```
 
-### Change API Sources
+Add this script to `package.json`.
 
-Edit `src/services/historyApi.ts` to modify or add new APIs.
-
-### Customize Categories
-
-Add new categories in `CATEGORY_KEYWORDS` object in `historyApi.ts`.
-
-### Modify Timeline Range
-
-In `Timeline.tsx`, adjust the year range:
-```typescript
-const xScale = d3.scaleLinear()
-  .domain([minYear - 50, maxYear + 50])  // Adjust padding
+```json
+{
+  "scripts": {
+    "deploy": "vite build && gh-pages -d dist"
+  }
+}
 ```
 
----
+Set the repository base path in `vite.config.ts`.
 
-## 🐛 Troubleshooting
+```typescript
+export default defineConfig({
+  base: "/history-map/",
+});
+```
 
-### Events not loading
-- Check browser console for API errors
-- Verify internet connection
-- Clear local storage and refresh
+Deploy the application.
 
-### Timeline not rendering
-- Ensure events are loaded (check React DevTools)
-- Verify D3.js version compatibility
-- Check for JavaScript errors in console
+```bash
+npm run deploy
+```
 
-### Performance issues
-- Reduce number of visible categories
-- Use search to filter events
-- Clear cache and reload
+## Configuration
 
----
+### Change the Cache Duration
 
-## 📚 Scripts
+Edit:
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Build for production |
-| `npm run preview` | Preview production build |
-| `npm run lint` | Run ESLint |
+```text
+src/services/cacheService.ts
+```
 
----
+Example:
 
-## 🙏 Credits
+```typescript
+const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000;
+```
 
-- **Historical Data**: [byabbe.se](https://byabbe.se/on-this-day/) and [Wikipedia](https://www.wikipedia.org/)
-- **Visualization**: [D3.js](https://d3js.org/)
-- **Animation**: [GSAP](https://greensock.com/gsap/)
-- **UI Framework**: [React](https://react.dev/)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+### Change the API Sources
 
----
+Edit:
 
-## 📄 License
+```text
+src/services/historyApi.ts
+```
 
-This project is open source and available for educational and personal use.
+### Change the Categories
 
----
+Update the `CATEGORY_KEYWORDS` object in `historyApi.ts`.
 
-## 🤝 Contributing
+### Change the Timeline Range
 
-Contributions, issues, and feature requests are welcome!
+Edit `Timeline.tsx`.
 
-### Ideas for Enhancement
-- [ ] Add date range selector
-- [ ] Implement timeline comparison mode
-- [ ] Add event sharing functionality
-- [ ] Create timeline bookmarks
-- [ ] Add dark/light theme toggle
-- [ ] Implement collaborative timeline creation
-- [ ] Add audio narration for events
+Example:
 
----
+```typescript
+const xScale = d3
+  .scaleLinear()
+  .domain([minYear - 50, maxYear + 50]);
+```
 
-<div align="center">
+## Troubleshooting
 
-**Built with ❤️ using React, TypeScript, and D3.js**
+### Events Do Not Load
 
-⭐ Star this project if you find it interesting!
+* Check the network connection.
+* Check the browser console for errors.
+* Clear local storage.
+* Reload the application.
 
-</div>
+### The Timeline Does Not Display
+
+* Make sure the event data loaded.
+* Check the browser console.
+* Verify the D3.js version.
+
+### Performance Is Slow
+
+* Reduce the number of displayed categories.
+* Search for a smaller set of events.
+* Clear the cache.
+* Reload the application.
+
+## Scripts
+
+| Command           | Description                   |
+| ----------------- | ----------------------------- |
+| `npm run dev`     | Start the development server. |
+| `npm run build`   | Create a production build.    |
+| `npm run preview` | Preview the production build. |
+| `npm run lint`    | Run ESLint.                   |
+
+## Credits
+
+Historical data:
+
+* byabbe.se
+* Wikipedia
+
+Software libraries:
+
+* React
+* TypeScript
+* D3.js
+* GSAP
+* Tailwind CSS
+* Axios
+
+## License
+
+This project is open source.
+
+You can use this project for education and personal use.
+
+## Contributing
+
+Contributions are welcome.
+
+Possible improvements include:
+
+* Add a date range selector.
+* Add timeline comparison.
+* Add event sharing.
+* Add timeline bookmarks.
+* Add light theme support.
+* Add collaborative timelines.
+* Add audio narration.
